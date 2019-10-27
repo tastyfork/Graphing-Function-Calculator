@@ -11,26 +11,132 @@
 # y = log x
 # y = sin x (y = cos x)
 # y = arcsin x (y = arccos x)
-# y = tg x (y = ctg x)
+# y = tg x
 # y = arctg x (y = arcctg x)
 # y = sec x (y = cosec x)
 #
-# Иерархия функций:
-#   Задается разбиение
-#   Строится функция
-#   Рисуется функция
-# разбиение выражения бинарным деревом
 ################################################################
 
 import numpy as np
+import numexpr as ne
 import matplotlib.pyplot as plt
+import re
 
 
-def razbienie(st=0, end=10):  # Функция, которая создает разбиение по Ох (множество точек на оси х)
+class Line:  # класс линии
+    def __init__(self, func, ox,
+                 label, color='r', form='-'
+                 ):
+        self.y = set_ay(ox, func)  # Функция вычисления у по х
+        self.x = ox
+        if label is None:
+            self.label = func
+        else:
+            self.label = label
+        self.color = color
+        self.form = form
+
+    def set_label(self, name):
+        self.label = name
+
+    def set_color(self, name):
+        self.color = name
+
+    def set_form(self, name):
+        self.form = name
+
+
+class Axes:  # Класс полотна
+    def __init__(self, fig, rows=1, cols=1, num=1):
+        # self.ax = fig.add_subplot(rows, cols, num)
+        self.array = []
+        self.lines = []
+
+    def set_array(self, start=-10.0, stop=10.0):
+        self.array = set_ax(start, stop)
+
+    def add_line(self, func, label, color, form):
+        cur = Line(func, self.array, label, color, form)
+        self.lines.append(cur)
+
+    def del_line(self, name):
+        for i in self.lines:
+            if i.label == name:
+                self.lines.remove(i)
+
+
+class Figure:   # Класс фигуры для размещения полотен
+    def __init__(self):
+
+        self.list_axes = []
+
+    def add(self, n=1):  # Добавить больше одного графика
+        if n == 1:
+            one = Axes(self, 1, 1, 1)
+            self.list_axes.append(one)
+        return one
+
+    def clear(self):
+        for i in self.list_axes:
+            i.pop()
+
+
+def create(func, label, color, form):  # Создание полотна для рисования
+    myfig = Figure
+    axes = myfig.add(myfig)
+    axes.set_array()
+
+
+class queue:   # Класс очереди
+    def __init__(self):
+        self.items = []
+
+    def is_empty(self):
+        return self.items == []
+
+    def add(self, a):
+        self.items.append(a)
+
+    def pop(self, a):
+        self.items.remove(a)
+
+    def clear(self):
+        self.items.clear()
+
+    def get_func(self, ind):
+        return self.items[ind]
+
+
+def set_ax(st=0, end=10):  # Функция, которая создает разбиение по Ох (множество точек на оси х)
     # Принимает начало и конец отрезка
     accuracy = (end - st) * 100
     ox = np.linspace(st, end, accuracy)
     return ox
+
+
+def cosec(ox, a=0, b=0):
+    oy = 1/np.cos(ox+a) + b
+    return oy
+
+
+def sec(ox, a=0, b=0):
+    oy = 1/np.sin(ox+a) + b
+    return oy
+
+
+def arctan(ox, a=0, b=0):
+    oy = np.arctan(ox+a) + b
+    return oy
+
+
+def arccotan(ox, a=0, b=0):
+    oy = np.pi/2 - np.arctan(ox+a) + b
+    return oy
+
+
+def cotan(ox, a=0, b=0):
+    oy = 1/np.tan(ox+a) + b
+    return oy
 
 
 def tan(ox, a=0, b=0):
@@ -38,9 +144,19 @@ def tan(ox, a=0, b=0):
     return oy
 
 
+def arccosinus(ox, a=0, b=0):
+    oy = np.arccos(ox+a) + b
+    return oy
+
+
 def arcsinus(ox, a=0, b=0):
     y = np.arcsin(ox+a) + b
     return y
+
+
+def cosinus(ox, a=0, b=0):
+    oy = np.cos(ox+a)+b
+    return oy
 
 
 def sinus(ox, a=0, b=0):
@@ -65,7 +181,7 @@ def pokaz(ox, a=0, b=0, n=2):  # Показательная функция
     return oy
 
 
-def confplot(a, b):
+def create_fig(a=0, b=10):  # Тоже функция создания полотна (тест 1)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_xlim(a, b)
@@ -76,15 +192,15 @@ def confplot(a, b):
     return ax
 
 
-def plot(x, y, label, ax):  # Функция отрисовки графика
+def plot(x, y, label, ax, func):  # Функция отрисовки графика тест 1
     # Принимает множество точек Ох, Оу и название графика
     label = label.encode("utf-8")
-    ax.plot(x, y, label=label)
+    lines, = ax.plot(x, y, label=label)
     ax.legend()
-    plt.show()
+    func.add(lines)
 
 
-def index(a):
+def index(a):   # Для теста 1
     if a == 2:
         print("Введите a, b")
     if a == 3:
@@ -99,30 +215,68 @@ def index(a):
     return ind
 
 
+def set_ay(ox, exp):   # Формирование значений оси у по функции
+    exp = exp.replace('^', '**')
+    exp = exp.replace('X', 'x')
+    exp = exp.replace('ctg', '1/tan')
+    exp = exp.replace('tg', 'tan')
+
+    y = []
+    for x in ox:
+        y.append(ne.evaluate(exp))
+    return y
+
+
+def save():   # Сохранение фигуры
+    plt.savefig('exmpl.png')
+
+
+def draw(ox, func, ax):   # Еще одна функция отрисовки графика (с использованием списка линий) тест 2
+    for i in func.items:
+        ax.plot(ox, i)
+    plt.show()
+
+
+def test2():
+    print("Введите количество функций: ")
+    functions = queue()
+    n = int(input())
+    ox = set_ax()
+    ax = create_fig()
+    for i in range(n):
+        print("Введите выражение:")
+        curr = input()
+        oy = set_ay(ox, curr)
+        functions.add(oy)
+   # plot(ox, ax, functions)
+    draw(ox, functions, ax)
+    save()
+
+
 def test():  # Функция для теста
     invalid_input = True
     print("Введите диапазон по Х:")
     start, end = input().split()
-    ox = razbienie(float(start), float(end))
-    ax = confplot(float(start), float(end))
+    ox = set_ax(float(start), float(end))
+    ax = config_plot(float(start), float(end))
     print("Введите количество графиков:")
     count = int(input())
     for i in range(count):
         print("Выберите график для построения:\n"
-          "1. y = (x+a)^n + b\n"
-          "2. y = n^(x+a) + b\n"
-          "3. y = logn(x+a) + b\n"
-          "4. y = sin(x+a) + b\n"
-          "5. y = arcsin(x+a) + b\n"
-          "6. y = tg(x+a) + b\n"
-          "7. y = arctg(x+a) + b\n"
-          "8. y = sec(x+a) + b\n"
-          "9. y = cosec(x+a) + b\n"
-          "10. y = cos(x+a) + b\n"
-          "11. y = arccos(x+a) + b\n"
-          "12. y = ctg(x+a) + b\n"
-          "13. y = arcctg(x+a) + b\n"
-          "14. y = a0*(x+b0)^n + a1*(x+b1)^(n-1) + ... + a(n-1)*(x+b(n-1))^1 + an*(x+bn)^0")
+              "1. y = (x+a)^n + b\n"
+              "2. y = n^(x+a) + b\n"
+              "3. y = logn(x+a) + b\n"
+              "4. y = sin(x+a) + b\n"
+              "5. y = arcsin(x+a) + b\n"
+              "6. y = tg(x+a) + b\n"
+              "7. y = arctg(x+a) + b\n"
+              "8. y = sec(x+a) + b\n"
+              "9. y = cosec(x+a) + b\n"
+              "10. y = cos(x+a) + b\n"
+              "11. y = arccos(x+a) + b\n"
+              "12. y = ctg(x+a) + b\n"
+              "13. y = arcctg(x+a) + b\n"
+              "14. y = a0*(x+b0)^n + a1*(x+b1)^(n-1) + ... + a(n-1)*(x+b(n-1))^1 + an*(x+bn)^0")
         ans = input()
         if ans == '1':  # Показательная функция
             a, b, n = index(3)
@@ -197,4 +351,4 @@ def test():  # Функция для теста
 
 
 if __name__ == "__main__":
-    test()
+    test2()
