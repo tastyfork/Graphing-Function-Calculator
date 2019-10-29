@@ -62,7 +62,7 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Graphing Function Calculator"))
         self.pushButton.setText(_translate("MainWindow", "Plot"))
-        self.toolButton.setText(_translate("MainWindow", "Settings"))
+        self.toolButton.setText(_translate("MainWindow", "Delete"))
 
 
 if __name__ == "__main__":
