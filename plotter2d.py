@@ -18,9 +18,9 @@
 ################################################################
 
 import numpy as np
-import numexpr as ne
+import fourFn as fn
+from fourFn import BNF
 import matplotlib.pyplot as plt
-import re
 
 
 class Line:  # класс линии
@@ -67,7 +67,6 @@ class Axes:  # Класс полотна
 
 class Figure:   # Класс фигуры для размещения полотен
     def __init__(self):
-
         self.list_axes = []
 
     def add(self, n=1):  # Добавить больше одного графика
@@ -114,73 +113,6 @@ def set_ax(st=0, end=10):  # Функция, которая создает ра�
     return ox
 
 
-def cosec(ox, a=0, b=0):
-    oy = 1/np.cos(ox+a) + b
-    return oy
-
-
-def sec(ox, a=0, b=0):
-    oy = 1/np.sin(ox+a) + b
-    return oy
-
-
-def arctan(ox, a=0, b=0):
-    oy = np.arctan(ox+a) + b
-    return oy
-
-
-def arccotan(ox, a=0, b=0):
-    oy = np.pi/2 - np.arctan(ox+a) + b
-    return oy
-
-
-def cotan(ox, a=0, b=0):
-    oy = 1/np.tan(ox+a) + b
-    return oy
-
-
-def tan(ox, a=0, b=0):
-    oy = np.tan(ox+a) + b
-    return oy
-
-
-def arccosinus(ox, a=0, b=0):
-    oy = np.arccos(ox+a) + b
-    return oy
-
-
-def arcsinus(ox, a=0, b=0):
-    y = np.arcsin(ox+a) + b
-    return y
-
-
-def cosinus(ox, a=0, b=0):
-    oy = np.cos(ox+a)+b
-    return oy
-
-
-def sinus(ox, a=0, b=0):
-    oy = np.sin(ox+a) + b
-    return oy
-
-
-def logarifm(ox, a=0, b=0, n=np.e):
-    oy = np.log(ox + a) / np.log(n) + b
-    return oy
-
-
-def stepen(ox, a=0, b=0, n=1):  # Степенная функция
-    # Принимает коэффициенты и множество точек на Ох
-    oy = ((ox+a) ** n) + b
-    return oy
-
-
-def pokaz(ox, a=0, b=0, n=2):  # Показательная функция
-    # Принимает коэффициенты и множество точек на Ох
-    oy = (n ** (ox+a)) + b
-    return oy
-
-
 def create_fig(a=0, b=10):  # Тоже функция создания полотна (тест 1)
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -218,14 +150,26 @@ def index(a):   # Для теста 1
 
 
 def set_ay(ox, exp):   # Формирование значений оси у по функции
-    exp = exp.replace('^', '**')
     exp = exp.replace('X', 'x')
-    exp = exp.replace('ctg', '1/tan')
-    exp = exp.replace('tg', 'tan')
 
     y = []
+    expression = exp
+
     for x in ox:
-        y.append(ne.evaluate(exp))
+        exp = exp.replace('x', str(x))
+        fn.exprStack[:] = []
+        try:
+            BNF().parseString(exp, parseAll=True)
+            val = fn.evaluate_stack(fn.exprStack[:])
+        except fn.ParseException as pe:
+            print(exp, "failed parse:", str(pe))
+            return 0
+        except Exception as e:
+            print(exp, "failed eval:", str(e), fn.exprStack)
+            return 0
+
+        y.append(val)
+        exp = expression
     return y
 
 
@@ -235,12 +179,19 @@ def save(fig):   # Сохранение фигуры
 
 def draw(ox, func, ax):   # Еще одна функция отрисовки графика (с использованием списка линий) тест 2
     for i in func.items:
-        ax.plot(ox, i)
+        try:
+            ax.plot(ox, i)
+        except Exception as e:
+            print('There is incorrect functions in list')
 
 
 def add_func(new, functions, ox):
-    oy = set_ay(ox, new)
-    functions.add(oy)
+    try:
+        oy = set_ay(ox, new)
+    except Exception as e:
+        print('Incorrect input')
+    else:
+        functions.add(oy)
 
 
 def clear_all(functions, ax):
@@ -248,120 +199,3 @@ def clear_all(functions, ax):
     for i in range(ln):
         ax.lines[0].remove()
     functions.clear()
-
-
-def test2():
-    print("Введите количество функций: ")
-    functions = queue()
-    n = int(input())
-    ox = set_ax()
-    fig = create_fig()
-    for i in range(n):
-        print("Введите выражение:")
-        curr = input()
-        oy = set_ay(ox, curr)
-        functions.add(oy)
-    plot(ox, fig.axes, functions)
-    draw(ox, functions, fig.axes)
-    save(fig)
-
-
-def test():  # Функция для теста
-    invalid_input = True
-    print("Введите диапазон по Х:")
-    start, end = input().split()
-    ox = set_ax(float(start), float(end))
-    ax = config_plot(float(start), float(end))
-    print("Введите количество графиков:")
-    count = int(input())
-    for i in range(count):
-        print("Выберите график для построения:\n"
-              "1. y = (x+a)^n + b\n"
-              "2. y = n^(x+a) + b\n"
-              "3. y = logn(x+a) + b\n"
-              "4. y = sin(x+a) + b\n"
-              "5. y = arcsin(x+a) + b\n"
-              "6. y = tg(x+a) + b\n"
-              "7. y = arctg(x+a) + b\n"
-              "8. y = sec(x+a) + b\n"
-              "9. y = cosec(x+a) + b\n"
-              "10. y = cos(x+a) + b\n"
-              "11. y = arccos(x+a) + b\n"
-              "12. y = ctg(x+a) + b\n"
-              "13. y = arcctg(x+a) + b\n"
-              "14. y = a0*(x+b0)^n + a1*(x+b1)^(n-1) + ... + a(n-1)*(x+b(n-1))^1 + an*(x+bn)^0")
-        ans = input()
-        if ans == '1':  # Показательная функция
-            a, b, n = index(3)
-            label = "(x+{})^{}+{}".format(a, n, b)
-            y = stepen(ox, a, b, n)
-            plot(ox, y, label, ax)
-        if ans == '2':  # Степенная функция
-            a, b, n = index(3)
-            label = "({}^(x+{})+{}".format(n, a, b)
-            y = pokaz(ox, a, b, n)
-            plot(ox, y, label, ax)
-        if ans == '3':  # Логарифмическая функция
-            a, b, n = index(3)
-            label = "log{}(x+{})+{}".format(n, a, b)
-            y = logarifm(ox, a, b, n)
-            plot(ox, y, label, ax)
-        if ans == '4':  # Функция синуса
-            a, b = index(2)
-            label = "sin(x+{})+{}".format(a, b)
-            y = sinus(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '5':  # Функция арксинуса
-            a, b = index(2)
-            label = "y = arcsin(x+{}) + {}".format(a, b)
-            y = arcsinus(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '6':   # Функция тангенса
-            a, b = index(2)
-            label = "y = tg(x+{}) + {}".format(a, b)
-            y = tan(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '7':  # Функция арктангенса
-            a, b = index(2)
-            label = "y = arctg(x + {}) + {}".format(a, b)
-            y = arctan(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '8':  # Функция секанса
-            a, b = index(2)
-            y = sec(ox, a, b)
-            label = "y = sec(x+{}) + {}".format(a, b)
-            plot(ox, y, label, ax)
-        if ans == '9':  # Функция косеканса
-            a, b = index(2)
-            label = "y = cosec(x+{}) + {}".format(a, b)
-            y = cosec(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '10':  # Функция косинуса
-            a, b = index(2)
-            label = "y = cos(x+{}) + {}".format(a, b)
-            y = cosinus(ox, a, b, ax)
-            plot(ox, y, label)
-        if ans == '11':  # Функция аркосинуса
-            a, b = index(2)
-            label = "y = arccos(x+{}) + {}".format(a, b)
-            y = arccosinus(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '12':  # Функция котангенса
-            a, b = index(2)
-            label = "y = ctg(x + {}) + {}".format(a, b)
-            y = cotan(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '13':  # Функция арккотагенса
-            a, b = index(2)
-            label = "y = arcctg(x+{}) + {}".format(a, b)
-            y = arccotan(ox, a, b)
-            plot(ox, y, label, ax)
-        if ans == '14':  # Функция полинома
-            a, b = index(2)
-            label = "y = a0*(x+b0)^n + ... + an*(x+bn)^0".format(argA, argB)
-            y = polinom(ox, argA, argB)
-            plot(ox, y, label, ax)
-
-
-if __name__ == "__main__":
-    test2()

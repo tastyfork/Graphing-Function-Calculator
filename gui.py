@@ -1,8 +1,4 @@
-import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
 from window_v2 import *
 import plotter2d as pl
 
@@ -34,17 +30,24 @@ class MyWin(QMainWindow, Ui_MainWindow):
 
         self.pushButton.clicked.connect(self.btn_clicked)
         self.toolButton.clicked.connect(self.tool_click)
+        self.pushButton.setAutoDefault(True)
+        self.lineEdit.returnPressed.connect(self.pushButton.click)
 
     def btn_clicked(self):
-        new = self.lineEdit.text()
-        self.lineEdit.clear()
-        pl.add_func(new, self.func, self.ox)
-        pl.draw(self.ox, self.func, self.ax)
-        self.textEdit.append(new)
+        if self.lineEdit.text():
+            new = self.lineEdit.text()
+            self.lineEdit.clear()
+            pl.add_func(new, self.func, self.ox)
+            pl.draw(self.ox, self.func, self.ax)
+            self.canvas.draw()
+            self.canvas.flush_events()
+            self.textEdit.append(new)
+            self.canvas.show()
 
     def tool_click(self):
         pl.clear_all(self.func, self.ax)
-        #pl.draw(self.ox, self.func, self.ax)
+        self.canvas.draw()
+        # pl.draw(self.ox, self.func, self.ax)
         self.textEdit.clear()
 
 
