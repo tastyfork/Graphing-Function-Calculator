@@ -11,6 +11,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_MainWindow(object):
+    function_checkboxes = []
+
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(820, 642)
@@ -41,7 +43,21 @@ class Ui_MainWindow(object):
         self.textEdit = QtWidgets.QTextEdit(self.centralwidget)
         self.textEdit.setMaximumSize(QtCore.QSize(400, 16777215))
         self.textEdit.setObjectName("textEdit")
+
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+
+        self.saveButton = QtWidgets.QToolButton(self.centralwidget)
+        self.saveButton.setObjectName('saveButton')
+        self.loadButton = QtWidgets.QToolButton(self.centralwidget)
+        self.loadButton.setObjectName('loadButton')
+
+        self.horizontalLayout_2.addWidget(self.saveButton)
+        self.horizontalLayout_2.addWidget(self.loadButton)
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.verticalLayout_2.addWidget(self.textEdit)
+
         self.toolButton = QtWidgets.QToolButton(self.centralwidget)
         self.toolButton.setObjectName("toolButton")
         self.verticalLayout_2.addWidget(self.toolButton)
@@ -63,6 +79,8 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "Graphing Function Calculator"))
         self.pushButton.setText(_translate("MainWindow", "Plot"))
         self.toolButton.setText(_translate("MainWindow", "Delete"))
+        self.saveButton.setText(_translate("MainWindow", 'Save'))
+        self.loadButton.setText(_translate("MainWindow", "Load"))
 
 
 if __name__ == "__main__":
