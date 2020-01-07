@@ -14,7 +14,6 @@
 # y = tg x
 # y = arctg x (y = arcctg x)
 # y = sec x (y = cosec x)
-#
 ################################################################
 
 import numpy as np
@@ -23,179 +22,128 @@ from fourFn import BNF
 import matplotlib.pyplot as plt
 
 
-class Line:  # класс линии
-    def __init__(self, func, ox,
-                 label, color='r', form='-'
-                 ):
-        self.y = set_ay(ox, func)  # Функция вычисления у по х
-        self.x = ox
-        if label is None:
-            self.label = func
-        else:
-            self.label = label
-        self.color = color
-        self.form = form
-
-    def set_label(self, name):
-        self.label = name
-
-    def set_color(self, name):
-        self.color = name
-
-    def set_form(self, name):
-        self.form = name
-
-
-class Axes:  # Класс полотна
-    def __init__(self, fig, rows=1, cols=1, num=1):
-        # self.ax = fig.add_subplot(rows, cols, num)
-        self.array = []
-        self.lines = []
-
-    def set_array(self, start=-10.0, stop=10.0):
-        self.array = set_ax(start, stop)
-
-    def add_line(self, func, label, color, form):
-        cur = Line(func, self.array, label, color, form)
-        self.lines.append(cur)
-
-    def del_line(self, name):
-        for i in self.lines:
-            if i.label == name:
-                self.lines.remove(i)
-
-
-class Figure:   # Класс фигуры для размещения полотен
+class Queue:   # Класс очереди
     def __init__(self):
-        self.list_axes = []
-
-    def add(self, n=1):  # Добавить больше одного графика
-        if n == 1:
-            one = Axes(self, 1, 1, 1)
-            self.list_axes.append(one)
-        return one
-
-    def clear(self):
-        for i in self.list_axes:
-            i.pop()
-
-
-def create(func, label, color, form):  # Создание полотна для рисования
-    myfig = Figure
-    axes = myfig.add(myfig)
-    axes.set_array()
-
-
-class queue:   # Класс очереди
-    def __init__(self):
-        self.items = []
+        self.x_values = []
+        self.y_values = []
+        self.colors = []
 
     def is_empty(self):
-        return self.items == []
+        return self.x_values == [] and self.y_values == [] and self.colors == []
 
-    def add(self, a):
-        self.items.append(a)
+    def add(self, x_values, y_values, color):
+        self.x_values.append(x_values)
+        self.y_values.append(y_values)
+        self.colors.append(color)
 
-    def pop(self, a):
-        self.items.remove(a)
+    def length(self):
+        return len(self.x_values)
 
     def clear(self):
-        self.items.clear()
+        self.x_values.clear()
+        self.y_values.clear()
+        self.colors.clear()
 
-    def get_func(self, ind):
-        return self.items[ind]
+
+class Function:
+    def __init__(self, text, start, end, accuracy, color):
+        self.text = text
+        self.start = start
+        self.end = end
+        self.accuracy = accuracy
+        self.color = color
 
 
-def set_ax(st=0, end=10):  # Функция, которая создает разбиение по Ох (множество точек на оси х)
+def calculate_x_values(start=0, end=10, accuracy=0):    # Функция, которая создает разбиение по Ох
     # Принимает начало и конец отрезка
-    accuracy = (end - st) * 100
-    ox = np.linspace(st, end, accuracy)
-    return ox
+    if accuracy <= 0:
+        accuracy = (end - start) * 10
+
+    x_values = np.linspace(start, end, accuracy)
+    return x_values
 
 
-def create_fig(a=0, b=10):  # Тоже функция создания полотна (тест 1)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.set_xlim(a, b)
-    ax.set_ylim(a, b)
-    ax.grid(True)
-    ax.set_xlabel(u'Аргумент')
-    ax.set_ylabel(u'Функция')
-    list_func = queue()
-    ox = set_ax(a, b)
-    return fig, list_func, ox, ax
+def calculate_y_values(x_values, expression):   # Формирование значений оси у по функции
+    expression = expression.replace('X', 'x')
+    y_values = []
 
-
-def plot(x, y, label, ax, func):  # Функция отрисовки графика тест 1
-    # Принимает множество точек Ох, Оу и название графика
-    label = label.encode("utf-8")
-    lines, = ax.plot(x, y, label=label)
-    ax.legend()
-    func.add(lines)
-
-
-def index(a):   # Для теста 1
-    if a == 2:
-        print("Введите a, b")
-    if a == 3:
-        print("Введите a, b и n:")
-    ind = input().split()
-    for x in range(len(ind)):
-        if ind[x] == 'e':
-            ind[x] = np.e
-        if ind[x] == 'pi':
-            ind[x] = np.pi
-        ind[x] = float(ind[x])
-    return ind
-
-
-def set_ay(ox, exp):   # Формирование значений оси у по функции
-    exp = exp.replace('X', 'x')
-
-    y = []
-    expression = exp
-
-    for x in ox:
-        exp = exp.replace('x', str(x))
-        fn.exprStack[:] = []
+    for x in x_values:
+        fn.exprStack = []
         try:
-            BNF().parseString(exp, parseAll=True)
-            val = fn.evaluate_stack(fn.exprStack[:])
+            BNF().parseString(expression.replace('x', str(x)), parseAll=True)
+            x_value = fn.evaluate_stack(fn.exprStack)
         except fn.ParseException as pe:
-            print(exp, "failed parse:", str(pe))
+            print(expression, "failed parse:", str(pe))
             return 0
         except Exception as e:
-            print(exp, "failed eval:", str(e), fn.exprStack)
+            print(expression, "failed eval:", str(e), fn.exprStack)
             return 0
 
-        y.append(val)
-        exp = expression
-    return y
+        y_values.append(x_value)
+
+    return y_values
 
 
-def save(fig):   # Сохранение фигуры
-    fig.savefig('exmpl.png')
+def create_figure_canvas(start=0, end=10):  # Тоже функция создания полотна
+    plt.cla()
+    figure_canvas = plt.figure()
+    subplot = figure_canvas.add_subplot(111)
+    subplot.set_xlim(start, end)
+    subplot.set_ylim(start, end)
+    subplot.grid(True)
+    subplot.set_xlabel('Аргумент')
+    subplot.set_ylabel('Функция')
+    return figure_canvas, subplot
 
 
-def draw(ox, func, ax):   # Еще одна функция отрисовки графика (с использованием списка линий) тест 2
-    for i in func.items:
+def draw(function_queue, axes):   # Еще одна функция отрисовки графика (с использованием списка линий)
+    for i in range(0, len(function_queue.y_values)):
         try:
-            ax.plot(ox, i)
+            axes.plot(function_queue.x_values[i], function_queue.y_values[i], color=str(function_queue.colors[i]))
         except Exception as e:
-            print('There is incorrect functions in list')
+            print('There is incorrect functions in list ', e)
 
 
-def add_func(new, functions, ox):
+def add_function(expression, functions, x_values, color):
     try:
-        oy = set_ay(ox, new)
+        y_values = calculate_y_values(x_values, expression)
     except Exception as e:
         print('Incorrect input')
     else:
-        functions.add(oy)
+        functions.add(x_values, y_values, color)
 
 
-def clear_all(functions, ax):
-    ln = len(ax.lines)
-    for i in range(ln):
-        ax.lines[0].remove()
+def edit_function(index, expression, functions, x_values, color):
+    try:
+        y_values = calculate_y_values(x_values, expression)
+    except Exception as e:
+        print('Incorrect input')
+    else:
+        functions.x_values[index] = x_values
+        functions.y_values[index] = y_values
+        functions.colors[index] = color
+
+
+def clear_all(functions, axes):   # Очистка всех функций
+    length = len(axes.lines)
+    for i in range(length):
+        axes.lines[0].remove()
     functions.clear()
+
+
+def validate_text(text):
+    try:
+        BNF().parseString(text.replace('x', str(0)), parseAll=True)
+        fn.evaluate_stack(fn.exprStack)
+        print('validated')
+    except fn.ParseException as pe:
+        print(text, "failed parse:", str(pe))
+        return False
+    except Exception as e:
+        print(text, "failed eval:", str(e), fn.exprStack)
+        return False
+    return True
+
+
+def screenshot(figure_canvas):   # Сохранение фигуры
+    figure_canvas.savefig('example.png')
