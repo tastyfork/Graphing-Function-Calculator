@@ -1,6 +1,3 @@
-import tkinter as tk
-from tkinter import filedialog
-
 from PyQt5.QtWidgets import *
 
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
@@ -8,6 +5,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 
 from design import *
 import design
+
+import json
 
 
 class MyMplCanvas(FigureCanvas):
@@ -24,7 +23,7 @@ class MyWin(QMainWindow, GuiMainWindow):
         self.setup(self)
 
         self.function_queue = plotter.Queue()
-        self.figure_canvas, self.subplot = plotter.create_figure_canvas()
+        self.figure_canvas, self.axes = plotter.create_figure_canvas()
         self.graph_layout = QVBoxLayout(self.widget)
 
         self.canvas = MyMplCanvas(self.figure_canvas)
@@ -57,7 +56,7 @@ class MyWin(QMainWindow, GuiMainWindow):
 
     # Called on clear button pressing
     def clear_click(self):
-        plotter.clear_all(self.function_queue, self.subplot)
+        plotter.clear_all(self.function_queue, self.axes)
         self.function_column.clear()
         self.input_line.clear()
         self.function_list.clear()
@@ -86,7 +85,10 @@ class MyWin(QMainWindow, GuiMainWindow):
                 self.start_line.setText(str(function.start))
                 self.end_line.setText(str(function.end))
                 self.accuracy_line.setText(str(function.accuracy))
-                self.color_line.setText(str(function.color))
+                index = self.color_box.findText(str(function.color), QtCore.Qt.MatchFixedString)
+                if index >= 0:
+                    self.color_box.setCurrentIndex(index)
+
             self.function_seleted(self.selected_function + 1)
 
     # Called on deselecting
@@ -108,14 +110,14 @@ class MyWin(QMainWindow, GuiMainWindow):
                 return
         x_values = plotter.calculate_x_values(start, end, accuracy)
         if color is None:
-            color = self.color_line.text()
+            color = self.color_box.currentText()
             if len(color) == 0:
                 design.error_message('Incorrect color: ' + str(color))
                 return
 
         # Calculating
         plotter.add_function(expression, self.function_queue, x_values, color)
-        plotter.draw(self.function_queue, self.subplot)
+        plotter.draw(self.function_queue, self.axes)
 
         # Drawing stuff
         self.canvas.draw()
@@ -137,60 +139,59 @@ class MyWin(QMainWindow, GuiMainWindow):
         except:
             design.error_message('Incorrect number')
             return
-        x_values = plotter.calculate_x_values(start, end, accuracy)
-        color = self.color_line.text()
+        color = self.color_box.currentText()
         if len(color) == 0:
             design.error_message('Incorrect color: ' + str(color))
             return
 
-        # Calculating
-        plotter.edit_function(self.selected_function, function, self.function_queue, x_values, color)
-        plotter.draw(self.function_queue, self.subplot)
+        # Clearing
+        old_list = self.function_list.copy()
+        self.clear_click()
 
-        # Drawing stuff
-        self.canvas.draw()
-        self.canvas.flush_events()
-        self.canvas.show()
-
-        # Store
-        func = plotter.Function(function, start, end, accuracy, color)
-        self.function_list[index] = func
-        self.function_column.clear()
-
-        # Updatig function column
-        cur = 1
-        for f in self.function_list:
-            self.function_column.append(str(cur) + ') ' + f.text)
-            cur += 1
+        # Re-adding
+        count = 0
+        for f in old_list:
+            if count == self.selected_function:
+                self.add_function_to_list(function, start, end, accuracy, color)
+            else:
+                self.add_function_to_list(f.text, f.start, f.end, f.accuracy, f.color)
 
     # Asks file path and loads from it function list
     def load_functions(self):
-        root = tk.Tk()
-        root.withdraw()
-
-        file = filedialog.askopenfile(mode='r')
-        if file is None:
+        name = QFileDialog.getOpenFileName(filter='Text files (*.json)')
+        if name[0] == '':
             return
 
-        self.function_list.clear()
-        self.function_column.clear()
-        for line in file:
-            text = line.replace('\n', '').split(' ')
-            self.add_function_to_list(text[0], int(text[1]), int(text[2]), int(text[3]), str(text[4]))
+        self.clear_click()
+        with open(name[0], 'r') as in_file:
+            data = json.load(in_file)
+            for func in data['functions']:
+                expression = func['expression']
+                start = int(func['x_start'])
+                end = int(func['x_end'])
+                accuracy = int(func['accuracy'])
+                color = func['color']
+                self.add_function_to_list(expression, start, end, accuracy, color)
 
     # Asks file path and saves function list there
     def save_functions(self):
-        root = tk.Tk()
-        root.withdraw()
-
-        file = filedialog.asksaveasfile(mode='w', defaultextension='.txt')
-        if file is None:
+        name = QFileDialog.getSaveFileName()
+        if name[0] == '':
             return
 
+        data = {}
+        data['functions'] = []
         for func in self.function_list:
-            text = func.text + ' ' + str(func.start) + ' ' + str(func.end) + ' ' + str(func.accuracy) + ' ' + str(func.color) + '\n'
-            file.write(text)
-        file.close()
+            data['functions'].append({
+                'expression': str(func.text),
+                'x_start': str(func.start),
+                'x_end': str(func.end),
+                'accuracy': str(func.accuracy),
+                'color': str(func.color)
+            })
+
+        with open(name[0], 'w') as out_file:
+            json.dump(data, out_file)
 
 
 if __name__ == "__main__":

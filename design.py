@@ -116,11 +116,10 @@ class GuiMainWindow(object):
         color_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         horizontal_layout_3.addWidget(color_label)
 
-        self.color_line = QtWidgets.QLineEdit(central_widget)
-        self.color_line.setMinimumSize(QtCore.QSize(0, 30))
-        self.color_line.setMaximumSize(QtCore.QSize(100, 30))
-        self.color_line.setObjectName('color_line')
-        horizontal_layout_3.addWidget(self.color_line)
+        self.color_box = QtWidgets.QComboBox()
+        self.color_box.addItems(['red', 'black', 'brown', 'blue', 'green', 'yellow', 'cyan', 'magenta', 'purple'])
+        self.color_box.setObjectName('color_box')
+        horizontal_layout_3.addWidget(self.color_box)
 
         self.reset_input_lines()
 
@@ -225,7 +224,7 @@ class GuiMainWindow(object):
         self.start_line.setText('0')
         self.end_line.setText('10')
         self.accuracy_line.setText('50')
-        self.color_line.setText('red')
+        self.color_box.setCurrentIndex(0)
 
     def function_seleted(self, function_id):
         if function_id is None:
