@@ -1,6 +1,5 @@
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import QToolTip
 
 import plotter2d as plotter
 
@@ -145,57 +144,37 @@ class GuiMainWindow(object):
         vertical_layout_2.addLayout(horizontal_layout_3)
 
         # FUNCTIONS LIST
-        self.function_column = QtWidgets.QTextEdit(central_widget)
-        self.function_column.setMaximumSize(QtCore.QSize(400, 16777215))
-        self.function_column.setObjectName("function_column")
-        self.function_column.setReadOnly(True)
-        vertical_layout_2.addWidget(self.function_column)
+        self.max_functions = 20
+        self.function_column = [None] * self.max_functions
+        self.function_edit_buttons = [None] * self.max_functions
+        self.function_remove_buttons = [None] * self.max_functions
+
+        for i in range(0, self.max_functions):
+            horizontal_layout_4 = QtWidgets.QHBoxLayout()
+
+            self.function_column[i] = QtWidgets.QCheckBox()
+            self.function_column[i].setEnabled(False)
+            self.function_column[i].setObjectName('function_column_' + str(1))
+            horizontal_layout_4.addWidget(self.function_column[i])
+
+            self.function_edit_buttons[i] = QtWidgets.QToolButton(central_widget)
+            self.function_edit_buttons[i].setVisible(False)
+            self.function_edit_buttons[i].setText('Edit')
+            horizontal_layout_4.addWidget(self.function_edit_buttons[i])
+
+            self.function_remove_buttons[i] = QtWidgets.QToolButton(central_widget)
+            self.function_remove_buttons[i].setVisible(False)
+            self.function_remove_buttons[i].setText('Delete')
+            horizontal_layout_4.addWidget(self.function_remove_buttons[i])
+
+            vertical_layout_2.addLayout(horizontal_layout_4)
 
         # CLEAR BUTTON
         self.clear_button = QtWidgets.QToolButton(central_widget)
         self.clear_button.setObjectName("clear_button")
         vertical_layout_2.addWidget(self.clear_button)
 
-        # SELECTING STUFF
-        horizontal_layout_4 = QtWidgets.QHBoxLayout()
-        horizontal_layout_4.setObjectName("horizontal_layout_4")
-
-        select_label = QtWidgets.QLabel()
-        select_label.setText('Function ID: ')
-        select_label.setObjectName('select_label')
-        select_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        horizontal_layout_4.addWidget(select_label)
-
-        self.select_line = QtWidgets.QLineEdit(central_widget)
-        self.select_line.setMinimumSize(QtCore.QSize(0, 20))
-        self.select_line.setMaximumSize(QtCore.QSize(50, 20))
-        self.select_line.setObjectName('select_line')
-        horizontal_layout_4.addWidget(self.select_line)
-
-        self.select_button = QtWidgets.QToolButton(central_widget)
-        self.select_button.setObjectName("select_button")
-        horizontal_layout_4.addWidget(self.select_button)
-
-        vertical_layout_2.addLayout(horizontal_layout_4)
-
-        horizontal_layout_4 = QtWidgets.QHBoxLayout()
-        horizontal_layout_4.setObjectName("horizontal_layout_5")
-
-        self.selected_label = QtWidgets.QLabel()
-        self.selected_label.setText('Selected: None')
-        self.selected_label.setObjectName('selected_label')
-        self.selected_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        horizontal_layout_4.addWidget(self.selected_label)
-
-        self.deselect_button = QtWidgets.QToolButton(central_widget)
-        self.deselect_button.setObjectName("deselect_button")
-        horizontal_layout_4.addWidget(self.deselect_button)
-
-        vertical_layout_2.addLayout(horizontal_layout_4)
         horizontal_layout_1.addLayout(vertical_layout_2)
-
-        self.function_seleted(None)
-        # SELECTING STUFF END
 
     def create_input_with_label(self, central_widget, layout, label_text):
         label = QtWidgets.QLabel()
@@ -216,8 +195,6 @@ class GuiMainWindow(object):
         self.clear_button.setText(_translate("MainWindow", "Clear"))
         self.save_button.setText(_translate("MainWindow", 'Save'))
         self.load_button.setText(_translate("MainWindow", "Load"))
-        self.select_button.setText(_translate('MainWindow', 'Select'))
-        self.deselect_button.setText(_translate('MainWindow', 'Deselect'))
 
     def reset_input_lines(self):
         self.input_line.clear()
@@ -228,13 +205,26 @@ class GuiMainWindow(object):
 
     def function_seleted(self, function_id):
         if function_id is None:
-            self.select_line.clear()
-            self.selected_label.setText('Selected: None')
-            self.deselect_button.setEnabled(False)
+            for i in range(0, self.max_functions):
+                self.function_edit_buttons[i].setEnabled(True)
+                self.function_remove_buttons[i].setEnabled(True)
         else:
-            self.select_line.setText(str(function_id))
-            self.selected_label.setText('Selected: ' + str(function_id))
-            self.deselect_button.setEnabled(True)
+            for i in range(0, self.max_functions):
+                self.function_edit_buttons[i].setEnabled(True)
+                self.function_remove_buttons[i].setEnabled(True)
+            self.function_edit_buttons[function_id].setEnabled(False)
+
+    def clear_column(self):
+        for i in range(0, self.max_functions):
+            self.function_column[i].setEnabled(False)
+            self.function_column[i].setText('')
+            self.function_column[i].setChecked(False)
+
+            self.function_edit_buttons[i].setVisible(False)
+            self.function_edit_buttons[i].setEnabled(False)
+
+            self.function_remove_buttons[i].setVisible(False)
+            self.function_remove_buttons[i].setEnabled(False)
 
 
 def error_message(text):
